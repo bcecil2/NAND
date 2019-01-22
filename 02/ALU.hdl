@@ -44,37 +44,54 @@ CHIP ALU {
     PARTS:
 
 // zx and nx gates
-    Not16(in=x, out=notxx);
-    And16(a=notxx, b=x, out=zerox); 
-    Mux16(a=x, b=zerox, sel=zx, out=zxmuxout);
-    
-    Not16(in=zxmuxout, out=notx);
-    Mux16(a=zxmuxout, b=notx, sel=nx, out=nxmuxout);
 
-    
+
+// if (zx == 1) set x = 0
+	Not16(in=x, out=notx);
+	And16(a=notx, b=x, out=xzerod);
+	Mux16(a=x, b=xzerod, sel=zx, out=zxout);
+
+// if (nx == 1) set x = !x
+	Not16(in=zxout, out=notzxout);
+	Mux16(a=zxout, b=notzxout, sel=nx, out=nxout);
+
+
 
 //  zy and ny gates
     
-    Not16(in=y, out=notyy);
-    And16(a=notyy, b=y, out=zeroy); 
-    Mux16(a=y, b=zeroy, sel=zy, out=zymuxout);
+   
+// if (zy == 1) set y = 0
+	Not16(in=y, out=noty);
+	And16(a=noty, b=y, out=yzerod);
+	Mux16(a=y, b=yzerod, sel=zy, out=zyout);
 
-    Not16(in=zymuxout, out=noty);
-    Mux16(a=zymuxout, b=noty, sel=ny, out=nymuxout);
+// if (ny == 1) set y = !y
+	Not16(in=zyout, out=notzyout);
+	Mux16(a=zyout, b=notzyout, sel=ny, out=nyout);
 
 // f
-   Add16(a=nxmuxout, b=nymuxout, out=xplusy);
-   And16(a=nxmuxout, b=nymuxout, out=xandy);
-   Mux16(a=xandy, b=xplusy, sel=f, out=fout);
 
-// n 
-   Not16(in=fout, out=notf);
-   Mux16(a=fout, b=notf, sel=no, out=out, out[15]=ng, out[0..7]=outone, out[8..15]=outtwo);
+	Add16(a=nxout, b=nyout, out=aplusb);
+	And16(a=nxout, b=nyout, out=aandb); 
+// if (f == 1)  set out = x + y 
+	
+// if (f == 0)  set out = x & y 
+
+	Mux16(a=aandb, b=aplusb, sel=f, out=fout);
+
+// n
+
+// if (no == 1) set out = !out  
+	Not16(in=fout, out=notf);
+	Mux16(a=fout, b=notf, sel=no, out=out, out[15]=ng, out[0..7]=lowbits, out[8..15]=highbits);
 
 //zr
-   Or8Way(in=outone, out=firstout);
-   Or8Way(in=outtwo, out=secondout);
-   Or(a=firstout, b=secondout, out=bothout);
-   Not(in=bothout, out=zr);
+
+// 1 if (out == 0), 0 otherwise
+	Or8Way(in=lowbits, out=lowbitor);
+	Or8Way(in=highbits, out=highbitor);
+	Or(a=lowbitor, b=highbitor, out=orout);
+	Not(in=orout, out=zr);
+			
 
 }
