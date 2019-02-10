@@ -1,5 +1,5 @@
 
-load "main.rb"
+#load "main.rb"
 
 
 class Parser
@@ -27,71 +27,59 @@ class Parser
 		end
 	end
 
-	def command_type(command)
+	def command_type()
 		type = ""
-		unless command.empty?
-			if command.match(/^[\/]{2}/) # matches // placed at beginning of line
+		unless @currentcommand.empty?
+			if @currentcommand.match(/^[\/]{2}/) # matches // placed at beginning of line
 				type = "COMMENT"
-			elsif command.match(/^[@]\d/) # matches @ placed at beginning of line followed by any digit
+			elsif @currentcommand.match(/^[@]\d/) # matches @ placed at beginning of line followed by any digit
 				type = "A"
-			elsif command.match(/([=]|[;])/) # mathches any line containg = or ; placed at beginning of line 
+			elsif @currentcommand.match(/([=]|[;])/) # mathches any line containg = or ; placed at beginning of line 
 				type = "C"
 			end
 		end
 	end
 
-	def symbol(command)
+	def symbol()
 		symbol_string =""
-		if command_type(command) == "A"
-			symbol_string = command[1..command.size] # slices anything past @
+		if command_type() == "A"
+			symbol_string = @currentcommand[1..@currentcommand.size] # slices anything past @
 		end
 	end
 
-	def dest(command)
+	def dest()
 		dest_string = ""
-		if command_type(command) == "C"
-			if command.match(/[=]/)
-				dest_string = command[/^[AMD]/] # returns the substring of any matches to the left of =
+		if command_type() == "C"
+			if @currentcommand.match(/[=]/)
+				dest_string = @currentcommand[/^[AMD]/] # returns the substring of any matches to the left of =
 			end
 		end
+		return dest_string
 	end
 
-	def comp(command)
+	def comp()
 		comp_string = ""
-		if command_type(command) == "C"
-			if command.match(/[=]/)
-				computation_array = command.split("=") # splits string on either side of the equals sign
+		if command_type() == "C"
+			if @currentcommand.match(/[=]/)
+				computation_array = @currentcommand.split("=") # splits string on either side of the equals sign
 				comp_string = computation_array[1]
 			end
 		end
+		return comp_string
 	end
 
-	def jump(command)
+	def jump()
 		jump_string = ""
-		if command_type(command) == "C"
-			if command.match(/[;]/)
-				computation_array = command.split(";") # splits string on either side of the ;
-				comp_string = computation_array[1]
+		if command_type() == "C"
+			if @currentcommand.match(/[;]/)
+				jump_array = @currentcommand.split(";") # splits string on either side of the ;
+				jump_string = computation_array[1]
 			end
 		end
+		return jump_string
 	end
 
 end
 
-boi = Parser.new()
-#while boi.has_more_commands
-#		boi.advance
-#		unless boi.currentcommand.empty?
-#			puts " current command is #{boi.currentcommand} and is of type #{boi.command_type(boi.currentcommand)}"	
-#			if boi.command_type(boi.currentcommand) == "A"
-#				 #puts boi.symbol(boi.currentcommand)	
-#			elsif boi.command_type(boi.currentcommand) == "C"
-#				 puts boi.comp(boi.currentcommand)
-#			end
-#				
-#		end
-#end
-while boi.has_more_commands
-	boi.advance
-	puts "current line #{boi.currentlinenumber} current command #{boi.currentcommand} "	
-end
+
+
