@@ -6,8 +6,8 @@ class Parser
 	attr_reader :currentlinenumber
 	attr_writer :currentcommand
 
-	def initialize()
-		name = get_filename
+	def initialize(file)
+		name = file
 		@assembly_file = File.open("#{name}", "r")
 		@linecount = IO.readlines(@assembly_file).size
 		@currentlinenumber = 0
@@ -19,9 +19,9 @@ class Parser
 	end
 
 	# gets the next line from the assembly file cleans it and increases line count
-	def advance()
+	def advance(command)
 		if has_more_commands
-			@currentcommand = @assembly_file.gets.chomp.gsub(/\s+/, '') # gets line, chomp removes newline characters, gsub hack shit to remove whitespace
+			@currentcommand = command.chomp.gsub(/\s+/, '') # gets line, chomp removes newline characters, gsub hack shit to remove whitespace
 			@currentlinenumber = $. - 1 # fukkin evil magic variable that tells you the number of last line read
 		end
 	end
