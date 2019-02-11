@@ -22,6 +22,10 @@ class Parser
 	def advance(command)
 		if has_more_commands
 			@currentcommand = command.chomp.gsub(/\s+/, '') # gets line, chomp removes newline characters, gsub hack shit to remove whitespace
+			if @currentcommand.match(/[\/]{2}/) # checks for inline comment 
+				currentcommand = @currentcommand.split("//") 
+				@currentcommand = currentcommand[0]
+			end
 			@currentlinenumber = $. - 1 # fukkin evil magic variable that tells you the number of last line read
 		end
 	end
@@ -36,6 +40,8 @@ class Parser
 				type = "A"
 			elsif @currentcommand.match(/([=]|[;])/) # mathches any line containg = or ; placed at beginning of line 
 				type = "C"
+			elsif @currentcommand.match(/^[()]/)
+				type = "L"	
 			end
 		end
 	end
@@ -88,7 +94,3 @@ class Parser
 	end
 
 end
-
-
-
-
