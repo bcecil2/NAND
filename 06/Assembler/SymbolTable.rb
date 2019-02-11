@@ -13,6 +13,18 @@ class SymbolTable
 			@symbols["R#{counter}"] = "#{counter}".to_i.to_s(2).rjust(16, "0")
 		end
 	end
+
+	def add_entry(symbol, address)
+		@symbols[symbol] = address
+	end
+
+	def contains(string)
+		@symbols.has_key?(string)
+	end
+
+	def get_address(string)
+		@symbols[string]
+	end
 end
 
 
