@@ -36,11 +36,11 @@ class Parser
 		unless @currentcommand.empty?
 			if @currentcommand.match(/^[\/]{2}/) # matches // placed at beginning of line
 				type = "COMMENT"
-			elsif @currentcommand.match(/^[@]\d/) # matches @ placed at beginning of line followed by any digit
+			elsif @currentcommand.match(/^[@][\da-zA-z]+/) # matches @ placed at beginning of line followed by any digit or characters
 				type = "A"
 			elsif @currentcommand.match(/([=]|[;])/) # mathches any line containg = or ; placed at beginning of line 
 				type = "C"
-			elsif @currentcommand.match(/^[()]/)
+			elsif @currentcommand.match(/^[(][A-Z[_]|[.]|[:]|[$]]+[)]{1}/) # matches smybolic commands of form (EXPRESSION)
 				type = "L"	
 			end
 		end
