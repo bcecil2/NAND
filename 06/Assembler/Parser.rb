@@ -1,7 +1,4 @@
 
-#load "main.rb"
-
-
 class Parser
 	attr_reader :file_size
 	attr_reader :assembly_file
@@ -21,13 +18,15 @@ class Parser
 		@currentlinenumber + 1 < @linecount
 	end
 
+	# gets the next line from the assembly file cleans it and increases line count
 	def advance()
 		if has_more_commands
 			@currentcommand = @assembly_file.gets.chomp.gsub(/\s+/, '') # gets line, chomp removes newline characters, gsub hack shit to remove whitespace
-			@currentlinenumber = $. - 1 # evil magic variable that tells you the number of last line read
+			@currentlinenumber = $. - 1 # fukkin evil magic variable that tells you the number of last line read
 		end
 	end
 
+	# returns type of current command as A, C, or COMMENT
 	def command_type()
 		type = ""
 		unless @currentcommand.empty?
@@ -41,6 +40,7 @@ class Parser
 		end
 	end
 
+	# returns the symbol of the current command following the @
 	def symbol()
 		symbol_string =""
 		if command_type() == "A"
@@ -48,24 +48,26 @@ class Parser
 		end
 	end
 
+	# returns the destination of the current C command
 	def dest()
 		dest_string = ""
 		if command_type() == "C"
 			if @currentcommand.match(/[=]/)
-				dest_array = @currentcommand.split("=")
-				dest_string = dest_array[0] # returns the substring of any matches to the left of =
+				dest_array = @currentcommand.split("=") # splits current command on the left of =
+				dest_string = dest_array[0] 
 			end
 		end
 		return dest_string
 	end
 
+	# returns the comp of the current C command
 	def comp()
 		comp_string = ""
 		if command_type() == "C"
-			if @currentcommand.match(/[=]/)
+			if @currentcommand.match(/[=]/) # if our comp is in the form  Dest=Comp
 				computation_array = @currentcommand.split("=") # splits string on either side of the equals sign
 				comp_string = computation_array[1]
-			elsif @currentcommand.match(/[;]/)
+			elsif @currentcommand.match(/[;]/) # if our comp is in the form Comp;Jump
 				computation_array = @currentcommand.split(";")
 				comp_string = computation_array[0]
 			end
@@ -73,6 +75,7 @@ class Parser
 		return comp_string
 	end
 
+	# returns the jump of the current C command
 	def jump()
 		jump_string = ""
 		if command_type() == "C"
