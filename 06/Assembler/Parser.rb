@@ -7,6 +7,7 @@ class Parser
 	attr_reader :assembly_file
 	attr_reader :currentcommand
 	attr_reader :currentlinenumber
+	attr_writer :currentcommand
 
 	def initialize()
 		name = get_filename
@@ -51,7 +52,8 @@ class Parser
 		dest_string = ""
 		if command_type() == "C"
 			if @currentcommand.match(/[=]/)
-				dest_string = @currentcommand[/^[AMD]/] # returns the substring of any matches to the left of =
+				dest_array = @currentcommand.split("=")
+				dest_string = dest_array[0] # returns the substring of any matches to the left of =
 			end
 		end
 		return dest_string
@@ -63,6 +65,9 @@ class Parser
 			if @currentcommand.match(/[=]/)
 				computation_array = @currentcommand.split("=") # splits string on either side of the equals sign
 				comp_string = computation_array[1]
+			elsif @currentcommand.match(/[;]/)
+				computation_array = @currentcommand.split(";")
+				comp_string = computation_array[0]
 			end
 		end
 		return comp_string
@@ -73,13 +78,14 @@ class Parser
 		if command_type() == "C"
 			if @currentcommand.match(/[;]/)
 				jump_array = @currentcommand.split(";") # splits string on either side of the ;
-				jump_string = computation_array[1]
+				jump_string = jump_array[1]
 			end
 		end
 		return jump_string
 	end
 
 end
+
 
 
 
