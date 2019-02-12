@@ -22,9 +22,7 @@ class Parser
 	def command_type()
 		type = ""
 		unless @currentcommand.empty?
-			if @currentcommand.match(/^[\/]{2}/) # matches // placed at beginning of line
-				type = "COMMENT"
-			elsif @currentcommand.match(/^[@][\da-zA-z]+/) # matches @ placed at beginning of line followed by any digit or characters
+			if @currentcommand.match(/^[@][\da-zA-z]+/) # matches @ placed at beginning of line followed by any digit or characters
 				type = "A"
 			elsif @currentcommand.match(/([=]|[;])/) # mathches any line containg = or ; placed at beginning of line 
 				type = "C"
@@ -58,13 +56,8 @@ class Parser
 	def comp()
 		comp_string = ""
 		if command_type() == "C"
-			if @currentcommand.match(/[=]/) # if our comp is in the form  Dest=Comp
-				computation_array = @currentcommand.split("=") # splits string on either side of the equals sign
-				comp_string = computation_array[1]
-			elsif @currentcommand.match(/[;]/) # if our comp is in the form Comp;Jump
-				computation_array = @currentcommand.split(";")
-				comp_string = computation_array[0]
-			end
+			computation_array = (@currentcommand.match(/[=]/)) ? @currentcommand.split("=") : @currentcommand.split(";")
+			comp_string = (@currentcommand.match(/[=]/)) ? computation_array[1] : computation_array[0]
 		end
 		return comp_string
 	end
