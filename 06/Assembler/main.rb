@@ -13,8 +13,17 @@ if  valid_args
 	file_to_fill = File.open("#{hack_file}", "w")
 	assembler = Assembler.new(ARGV[0])
 	assembly_file.each do |line|
-		assembler.assemble_line(line, file_to_fill)
-	end	
+		assembler.first_pass(line)
+	end
+
+	assembly_file = File.open("#{asm_filename}", "r")
+	assembly_file.each do |line|
+		if !assembler.second_pass(line).empty? && assembler.Parser.command_type != "L"
+		 file_to_fill << assembler.second_pass(line) << "\n"
+		end
+	end
+		
 else
 	puts "call to main with invalid arguments"
 end
+
