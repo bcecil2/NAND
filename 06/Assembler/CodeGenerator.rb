@@ -58,17 +58,15 @@ class CodeGenerator
 
 	def comp(command)
 		unless command.empty?
+			comp_bits = (command.include? "M") ? "1" : "0"
 			if command.include? "M"
-				comp_bits = "1"
 				comp_bits << @comp_table_a1[command]
 				comp_bits = comp_bits
-				return comp_bits
 			else
-				comp_bits = "0"
 				comp_bits << @comp_table_a0[command]
 				comp_bits = comp_bits
-				return comp_bits
 			end
+			return comp_bits
 		end
 	end
 
