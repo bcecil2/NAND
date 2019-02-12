@@ -8,51 +8,56 @@ class Assembler
 	attr_reader :Parser
 	attr_reader :symbol_table
 
-	def initialize(file)
+	def initialize()
 		@CodeGenerator = CodeGenerator.new
-		@Parser = Parser.new(file)
+		@Parser = Parser.new
 		@symbol_table = SymbolTable.new
 		@ROM_address = 0
 		@variable_count = 0
+		@VARIABLE_BASE_ADDRESS = 16
 	end
 
 	def first_pass(incoming_line)
 		@Parser.advance(incoming_line)
-		if @Parser.command_type == "A" || @Parser.command_type == "C" # if we have an A or C command increment the ROM line counter
+		if @Parser.command_type == "A" || @Parser.command_type == "C" 
 			@ROM_address += 1
-		elsif @Parser.command_type == "L" # if we have a label get its name and create an entry in the symbol table with its corresponding address
-			@symbol_table.add_entry(@Parser.currentcommand.gsub(/^[(]|[)]/, ""), @ROM_address.to_s(2).rjust(16, "0"))
+		elsif @Parser.command_type == "L" 
+			@symbol_table.add_entry(@Parser.currentcommand.gsub(/^[(]|[)]/, ""), to_16bit_binary(@ROM_address))
 		end
 	end
 
+	def empty_line(incoming_line)
+		incoming_line.gsub(" ", "").empty?
+	end
 	def second_pass(incoming_line)
 		@Parser.currentcommand = ""
-		@Parser.advance(incoming_line) # reads in incoming line
-		@Parser.currentcommand
-		if @Parser.command_type == "A" # if its an A command
-			variable_name = @Parser.symbol # grab whats to the right of the @
-			#puts variable_name 
-			unless @Parser.currentcommand.match(/^@[^a-zA-Z]/) # if its a variable
-				if @symbol_table.symbols.key?(variable_name) # if the variable already exists
-					#puts "getting key for #{variable_name}"
-					variable_name = @symbol_table.symbols[variable_name] # get the key
-					#puts "key for #{variable_name}"
-					@Parser.currentcommand = variable_name # translate it to binary
-
-				else # new variable translate to binary ram address starting at 16
-					@Parser.currentcommand = @symbol_table.add_entry(variable_name, (16 + @variable_count).to_s(2).rjust(16, "0"))
-					@variable_count += 1
-				end
-			else # just a constant that can be converted
-				@Parser.currentcommand = variable_name.to_i.to_s(2).rjust(16, "0")
+		@Parser.advance(incoming_line)
+		if @Parser.command_type == "A" 
+			variable_name = @Parser.symbol 
+			unless @Parser.currentcommand.match(/^@[^a-zA-Z]/) 
+				handle_variable(variable_name)
+			else 
+				@Parser.currentcommand = variable_name.to_i.to_s(2).rjust(16, "0")  
 			end
 		elsif @Parser.command_type() == "C"
-			    c_command = "111"
-				@Parser.currentcommand = c_command << @CodeGenerator.comp(@Parser.comp()) << @CodeGenerator.dest(@Parser.dest()) << @CodeGenerator.jump(@Parser.jump())
-		end
+			c_command = "111"
+			@Parser.currentcommand = c_command << @CodeGenerator.comp(@Parser.comp()) << @CodeGenerator.dest(@Parser.dest()) << @CodeGenerator.jump(@Parser.jump()) 
+		end 
 		return @Parser.currentcommand
 	end
-		 	 
+
+	def to_16bit_binary(number)
+		number.to_s(2).rjust(16, "0")
+	end
+	
+	def handle_variable(variable_name)
+		if @symbol_table.symbols.key?(variable_name) 
+			@Parser.currentcommand = @symbol_table.symbols[variable_name] 
+		else 
+			@Parser.currentcommand = @symbol_table.add_entry(variable_name, to_16bit_binary((@VARIABLE_BASE_ADDRESS + @variable_count)))
+			@variable_count += 1
+		end
+	end	 
 end
 
 
