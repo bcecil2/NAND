@@ -1,33 +1,24 @@
+load "SymbolTable.rb"
 
 class Parser
-	attr_reader :file_size
-	attr_reader :assembly_file
 	attr_reader :currentcommand
-	attr_reader :currentlinenumber
+	attr_writer :currentlinenumber
 	attr_writer :currentcommand
 
 	def initialize(file)
-		name = file
-		@assembly_file = File.open("#{name}", "r")
-		@linecount = IO.readlines(@assembly_file).size
 		@currentlinenumber = 0
 		@currentcommand = ""
 	end
 
-	def has_more_commands()
-		@currentlinenumber + 1 < @linecount
-	end
 
 	# gets the next line from the assembly file cleans it and increases line count
 	def advance(command)
-		if has_more_commands
 			@currentcommand = command.chomp.gsub(/\s+/, '') # gets line, chomp removes newline characters, gsub hack shit to remove whitespace
 			if @currentcommand.match(/[\/]{2}/) # checks for inline comment 
 				currentcommand = @currentcommand.split("//") 
 				@currentcommand = currentcommand[0]
 			end
 			@currentlinenumber = $. - 1 # fukkin evil magic variable that tells you the number of last line read
-		end
 	end
 
 	# returns type of current command as A, C, or COMMENT
@@ -40,7 +31,7 @@ class Parser
 				type = "A"
 			elsif @currentcommand.match(/([=]|[;])/) # mathches any line containg = or ; placed at beginning of line 
 				type = "C"
-			elsif @currentcommand.match(/^[(][A-Z[_]|[.]|[:]|[$]]+[)]{1}/) # matches smybolic commands of form (EXPRESSION)
+			elsif @currentcommand.match(/^[(][a-zA-Z_.:$\d)]+/) # matches smybolic commands of form (EXPRESSION_.$:)
 				type = "L"	
 			end
 		end
