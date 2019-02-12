@@ -26,8 +26,7 @@ class Assembler
 	end
 
 	def second_pass(incoming_line)
-		@Parser.currentlinenumber = 0 # reset the Parser for the second pass
-		@Parser.currentcommand = 0
+		@Parser.currentcommand = ""
 		@Parser.advance(incoming_line) # reads in incoming line
 		@Parser.currentcommand
 		if @Parser.command_type == "A" # if its an A command
