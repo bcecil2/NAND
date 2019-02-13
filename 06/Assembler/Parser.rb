@@ -1,10 +1,10 @@
-load "SymbolTable.rb"
+
 
 class Parser
 	attr_reader :currentcommand
 	attr_writer :currentcommand
 
-	def initialize(file)
+	def initialize()
 		@currentcommand = ""
 	end
 
@@ -18,7 +18,7 @@ class Parser
 			end
 	end
 
-	# returns type of current command as A, C, or COMMENT
+	# returns type of current command as A, C, or L
 	def command_type()
 		type = ""
 		unless @currentcommand.empty?

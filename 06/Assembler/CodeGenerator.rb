@@ -48,6 +48,7 @@ class CodeGenerator
 		               "JMP" => "111"}
 	end
 
+	# returns destination bits of C instruction
 	def dest(command)
 		dest_bits = "000"
 		unless command.empty?
@@ -55,10 +56,11 @@ class CodeGenerator
 		end	
 		return dest_bits
 	end
-
+    
+    # returns computation bits of C instruction
 	def comp(command)
 		unless command.empty?
-			comp_bits = (command.include? "M") ? "1" : "0"
+			comp_bits = (command.include? "M") ? "1" : "0" # determines a prefix for c command
 			if command.include? "M"
 				comp_bits << @comp_table_a1[command]
 				comp_bits = comp_bits
@@ -70,6 +72,7 @@ class CodeGenerator
 		end
 	end
 
+	#returns jump bits of C instruction
 	def jump(command)
 		jump_bits = "000"
 		unless command.empty?

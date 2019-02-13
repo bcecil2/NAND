@@ -17,6 +17,7 @@ class Assembler
 		@VARIABLE_BASE_ADDRESS = 16
 	end
 
+	# first past marches through incoming file looking for labels and adding them to the symbol table with their associated pointer in ROM
 	def first_pass(incoming_line)
 		@Parser.advance(incoming_line)
 		if @Parser.command_type == "A" || @Parser.command_type == "C" 
@@ -26,22 +27,22 @@ class Assembler
 		end
 	end
 
-	def empty_line(incoming_line)
-		incoming_line.gsub(" ", "").empty?
-	end
+	# second pass marches through incoming file doing two main things
+	# 1 if it comes across a variable it checks to see if its in the table if it is it replaces it with its binary value
+	# 2 if it comes across a variable that is not in the table it adds it its offset from VARIABLE_BASE_ADDRESS as the value
+	# other wise if it comes across a constant or C command it converts them to their binary
 	def second_pass(incoming_line)
-		@Parser.currentcommand = ""
 		@Parser.advance(incoming_line)
 		if @Parser.command_type == "A" 
 			variable_name = @Parser.symbol 
-			unless @Parser.currentcommand.match(/^@[^a-zA-Z]/) 
+			unless @Parser.currentcommand.match(/^@[^a-zA-Z]/) # matches only with @ followed by only digits
 				handle_variable(variable_name)
 			else 
 				@Parser.currentcommand = variable_name.to_i.to_s(2).rjust(16, "0")  
 			end
-		elsif @Parser.command_type() == "C"
-			c_command = "111"
-			@Parser.currentcommand = c_command << @CodeGenerator.comp(@Parser.comp()) << @CodeGenerator.dest(@Parser.dest()) << @CodeGenerator.jump(@Parser.jump()) 
+			elsif @Parser.command_type() == "C"
+				c_command = "111"
+				@Parser.currentcommand = c_command << @CodeGenerator.comp(@Parser.comp()) << @CodeGenerator.dest(@Parser.dest()) << @CodeGenerator.jump(@Parser.jump()) 
 		end 
 		return @Parser.currentcommand
 	end
@@ -50,6 +51,7 @@ class Assembler
 		number.to_s(2).rjust(16, "0")
 	end
 	
+	# handles the look up of labels and variables into the symbol table
 	def handle_variable(variable_name)
 		if @symbol_table.symbols.key?(variable_name) 
 			@Parser.currentcommand = @symbol_table.symbols[variable_name] 
