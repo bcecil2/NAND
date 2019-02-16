@@ -1,10 +1,12 @@
+require_relative "CodeWriter.rb"
+
 class Parser
 	attr_reader :current_line
   
 	def initialize(in_file, out_file)
 		@current_line = ""
 		@vm_file = in_file.readlines
-		@asm_file = out_file 
+		@code_writer = CodeWriter.new(out_file)	
 	end
 
 # change this so we dont have to deal with spaces again
@@ -35,7 +37,7 @@ class Parser
 			arg1 = @current_line.split("push")[1].split(/[0-9]/)
 		elsif command_type == "C_POP"
 			arg1 = @current_line.split("pop")[1].split(/[0-9]/)
-		elsif command_type == "C_ARITHMETIC"
+		elsif command_type == "C_ARITHMETIC" || command_type == "C_EQUAL" || command_type == "C_BOOL"
 			arg1 = @current_line
 		end
 	end
@@ -52,12 +54,19 @@ class Parser
 
 
 	def parse()
+
 		@vm_file.each do |line|
 			clean_line(line)
 			unless @current_line.empty?
-				
+				puts line, command_type, arg1
+				if command_type == "C_PUSH"
+					@code_writer.write_push_pop(command_type, arg1, arg2, line)
+				elsif command_type == "C_ARITHMETIC" || command_type == "C_EQUAL" || command_type == "C_BOOL"
+					@code_writer.write_arithmetic(arg1, line)
+				end
 			end
 		end
+		@code_writer.add_end
 	end
 
 
