@@ -26,10 +26,11 @@ class Parser
 		elsif @current_line.match(/\badd\b|\bsub\b|\bneg\b/)
 		  command_type = "C_ARITHMETIC"
 		elsif @current_line.match(/\beq\b|\blt\b|\bgt\b/)
-			command_type = "C_EQUAL"
+			command_type = "C_ARITHMETIC"
 		elsif @current_line.match(/\bor\b|\bnot\b|\band\b/)
-			command_type = "C_BOOL"
+			command_type = "C_ARITHMETIC"		
 		end
+
 	end
 
 	def arg1()
@@ -37,7 +38,7 @@ class Parser
 			arg1 = @current_line.split("push")[1].split(/[0-9]/)
 		elsif command_type == "C_POP"
 			arg1 = @current_line.split("pop")[1].split(/[0-9]/)
-		elsif command_type == "C_ARITHMETIC" || command_type == "C_EQUAL" || command_type == "C_BOOL"
+		elsif command_type == "C_ARITHMETIC" #|| command_type == "C_EQUAL" || command_type == "C_BOOL"
 			arg1 = @current_line
 		end
 	end
@@ -58,10 +59,9 @@ class Parser
 		@vm_file.each do |line|
 			clean_line(line)
 			unless @current_line.empty?
-				puts line, command_type, arg1
 				if command_type == "C_PUSH"
 					@code_writer.write_push_pop(command_type, arg1, arg2, line)
-				elsif command_type == "C_ARITHMETIC" || command_type == "C_EQUAL" || command_type == "C_BOOL"
+				elsif command_type == "C_ARITHMETIC" #|| command_type == "C_EQUAL" || command_type == "C_BOOL"
 					@code_writer.write_arithmetic(arg1, line)
 				end
 			end
