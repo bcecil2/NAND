@@ -116,12 +116,19 @@ class CodeWriter
 		"@#{index}\nD=A\n#{@mem_segment_table[segment]}\nA=A+D\nD=M\n@SP\nA=M\nM=D\n"
 	end
 
+	# pushes the value indexed from the static section to the stack
 	def push_static(index)
-		"@#{@static_prefix}.#{index}\nD=A\n@16\nD=D-A\n@#{index}\nD=A-D\n@#{@static_prefix}.#{index}\nA=A+D\nD=M\n@SP\nA=M\nM=D\n"
+		write_static_offset(index) << "A=A+D\nD=M\n@SP\nA=M\nM=D\n"
 	end
 
+	# pops the topmost item off the stack into the segment of static memory based on the index
 	def pop_static(index)
-		"@#{@static_prefix}.#{index}\nD=A\n@16\nD=D-A\n@#{index}\nD=A-D\n@#{@static_prefix}.#{index}\nD=A+D\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n"
+		write_static_offset(index) << "D=A+D\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n"
+	end
+
+	# calculates the offset based on the variables number in ram and the base of the static segment (16)
+	def write_static_offset(index)
+		"@#{@static_prefix}.#{index}\nD=A\n@16\nD=D-A\n@#{index}\nD=A-D\n@#{@static_prefix}.#{index}\n"
 	end
 
 end
