@@ -15,7 +15,8 @@ class CodeWriter
 							  "this" => "@THIS\n",
 							  "that" => "@THAT\n",
 							  "argument" => "@ARG\n",
-							  "temp" => "@5\n"}
+							  "temp" => "@5\n",
+							  "pointer" => "@3"}
 	end
 
 	def write_arithmetic(command , line)
@@ -42,14 +43,14 @@ class CodeWriter
 		if command == "C_PUSH"
 			if segment == "constant"
 				@asm_file << "@#{index}\nD=A\n" << @mem_segment_table[segment] << "A=M\nM=D\n#{increment_sp}"
-			elsif segment == "temp"
+			elsif segment == "temp" || segment == "pointer"
 				@asm_file << push_temp(segment, index) << increment_sp	
 			else
 				@asm_file << write_ptr_offset(segment, index) << push_to_segment << undo_ptr_offset(segment, index) << increment_sp
 			end
 				
 		elsif command == "C_POP"
-			if segment == "temp"
+			if segment == "temp" || segment == "pointer"
 				@asm_file << pop_temp(segment, index) 
 			else
 				@asm_file << write_ptr_offset(segment, index) << pop_to_segment(segment) << undo_ptr_offset(segment, index)
