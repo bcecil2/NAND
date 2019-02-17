@@ -3,6 +3,7 @@ class CodeWriter
 	attr_writer :asm_file
 	def initialize(file_to_write)
 		@asm_file = File.open(file_to_write, "w")
+		@static_prefix =  File.basename(file_to_write).gsub(".asm", "")
 		@label_count = 1
 		@binary_operator_table = {"add" => "M=M+D\n",
 		 					 	  "sub" => "M=M-D\n",
@@ -16,7 +17,8 @@ class CodeWriter
 							  "that" => "@THAT\n",
 							  "argument" => "@ARG\n",
 							  "temp" => "@5\n",
-							  "pointer" => "@3"}
+							  "pointer" => "@3\n",
+							  "static" => "@16\n"}
 	end
 
 	def write_arithmetic(command , line)
@@ -45,6 +47,8 @@ class CodeWriter
 				@asm_file << "@#{index}\nD=A\n" << @mem_segment_table[segment] << "A=M\nM=D\n#{increment_sp}"
 			elsif segment == "temp" || segment == "pointer"
 				@asm_file << push_temp(segment, index) << increment_sp	
+			elsif segment == "static"
+				@asm_file << push_static(index) << increment_sp
 			else
 				@asm_file << write_ptr_offset(segment, index) << push_to_segment << undo_ptr_offset(segment, index) << increment_sp
 			end
@@ -52,7 +56,9 @@ class CodeWriter
 		elsif command == "C_POP"
 			if segment == "temp" || segment == "pointer"
 				@asm_file << pop_temp(segment, index) 
-			else
+			elsif segment == "static"
+				@asm_file << pop_static(index)
+			else	
 				@asm_file << write_ptr_offset(segment, index) << pop_to_segment(segment) << undo_ptr_offset(segment, index)
 	    	end
 	    end
@@ -109,4 +115,13 @@ class CodeWriter
 	def push_temp(segment, index)
 		"@#{index}\nD=A\n#{@mem_segment_table[segment]}\nA=A+D\nD=M\n@SP\nA=M\nM=D\n"
 	end
+
+	def push_static(index)
+		"@#{@static_prefix}.#{index}\nD=A\n@16\nD=D-A\n@#{index}\nD=A-D\n@#{@static_prefix}.#{index}\nA=A+D\nD=M\n@SP\nA=M\nM=D\n"
+	end
+
+	def pop_static(index)
+		"@#{@static_prefix}.#{index}\nD=A\n@16\nD=D-A\n@#{index}\nD=A-D\n@#{@static_prefix}.#{index}\nD=A+D\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n"
+	end
+
 end
