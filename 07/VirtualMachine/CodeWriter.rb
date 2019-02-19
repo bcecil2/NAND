@@ -1,6 +1,10 @@
+require "erb"
+
+
 class CodeWriter
 
   attr_writer :asm_file
+  attr_reader :index, :mem_segment_table
   def initialize(file_to_write)
     @asm_file = File.open(file_to_write, "w")
     @static_prefix =  File.basename(file_to_write).gsub(".asm", "")
@@ -19,6 +23,22 @@ class CodeWriter
                           "temp" => "@5\n",
                           "pointer" => "@3\n",
                           "static" => "@16\n"}
+    @push_file_table = {"constant" => "pushconstant.erb",
+                       "temp" => "pushpointerandtemp.erb",
+                       "pointer" => "pushpointerandtemp.erb",
+                       "static" => "pushstatic.erb",
+                       "local" => "pushargandlcl.erb",
+                       "this" => "pushargandlcl.erb",
+                       "that" => "pushargandlcl.erb",
+                       "argument" => "pushargandlcl.erb"}
+
+    @pop_file_table = {"temp" => "poptempandpointer.erb",
+                       "pointer" => "poptempandpointer.erb",
+                       "static" => "popstatic.erb",
+                       "local" => "popargandlcl.erb",
+                       "this" => "popargandlcl.erb",
+                       "that" => "popargandlcl.erb",
+                       "argument" => "popargandlcl.erb"}
   end
 
   def write_arithmetic(command , line)
@@ -44,23 +64,9 @@ class CodeWriter
   def write_push_pop(command, segment, index, line)
     @asm_file << "//#{line}\n"
     if command == "C_PUSH"
-      if segment == "constant"
-        @asm_file << "@#{index}\nD=A\n" << @mem_segment_table[segment] << "A=M\nM=D\n#{increment_sp}"
-      elsif segment == "temp" || segment == "pointer"
-        @asm_file << push_temp(segment, index) << increment_sp  
-      elsif segment == "static"
-        @asm_file << push_static(index) << increment_sp
-      else
-        @asm_file  << write_ptr_offset(segment, index) << push_to_segment << undo_ptr_offset(segment, index) << increment_sp
-      end   
+      @asm_file <<ERB.new(File.read(@push_file_table[segment])).result(binding)  
     elsif command == "C_POP"
-      if segment == "temp" || segment == "pointer"
-        @asm_file << pop_temp(segment, index) 
-      elsif segment == "static"
-        @asm_file << pop_static(index)
-      else  
-        @asm_file << write_ptr_offset(segment, index) << pop_to_segment(segment) << undo_ptr_offset(segment, index)
-      end
+      @asm_file <<ERB.new(File.read(@pop_file_table[segment])).result(binding)
     end
   end
 
@@ -85,49 +91,7 @@ class CodeWriter
   end
 
   # pops the topmost item off the stack accesses the corresponding memory segment pointer and stores the popped item in that address
-  def pop_to_segment(segment)
-    "@SP\nM=M-1\nA=M\nD=M\n#{@mem_segment_table[segment]}\nA=M\nM=D\n"
-  end
 
-  # helper fucntion used to push item referenced by segment onto the stack
-  def push_to_segment()
-   "A=M\n D=M\n @SP\n A=M\n M=D\n"
-  end
-
-    # calculates the pointers offset from its base and stores it in the pointers place
-  def write_ptr_offset(segment, index)
-    "@#{index}\nD=A\n#{@mem_segment_table[segment]}\nM=M+D\n"
-  end
-
-  # undoes the offset calculated so that the pointer points back to its base
-  def undo_ptr_offset(segment, index)
-    "@#{index}\nD=A\n#{@mem_segment_table[segment]}\nM=M-D\n"
-  end
-
-  # pops the topmost item off the stack and store it in temp by
-  # 1 calculating the offset from the base of the temp segment (5) and storing it in R13
-  # 2 putting the topmost item popped off the stack into the address pointed to by R13
-  def pop_temp(segment, index)
-    "@#{index}\nD=A\n#{@mem_segment_table[segment]}\nA=A+D\nD=A\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n"
-  end
-
-  # pushes whatever is stored in the temp onto the stack
-  def push_temp(segment, index)
-    "@#{index}\nD=A\n#{@mem_segment_table[segment]}\nA=A+D\nD=M\n@SP\nA=M\nM=D\n"
-  end
-
-  # pushes the value indexed from the static section to the stack
-  def push_static(index)
-    write_static_offset(index) << "A=A+D\nD=M\n@SP\nA=M\nM=D\n"
-  end
-
-  # pops the topmost item off the stack into the segment of static memory based on the index
-  def pop_static(index)
-    write_static_offset(index) << "D=A+D\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n"
-  end
-
-  # calculates the offset based on the variables number in ram and the base of the static segment (16)
-  def write_static_offset(index)
-    "@#{@static_prefix}.#{index}\nD=A\n@16\nD=D-A\n@#{index}\nD=A-D\n@#{@static_prefix}.#{index}\n"
-  end
 end
+
+
