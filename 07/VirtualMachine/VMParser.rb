@@ -1,5 +1,6 @@
 require_relative "CodeWriter.rb"
 
+
 class Parser
   attr_reader :current_line
   
@@ -9,44 +10,44 @@ class Parser
     @code_writer = CodeWriter.new(out_file) 
   end
 
-  def clean_line(incoming_line)
-    @current_line = incoming_line.chomp.gsub(" ", '')
-    if @current_line.match(/[\/]{2}/) # checks for inline comment 
-        @current_line = @current_line.split("//") 
-        @current_line = @current_line[0]
-    end
+  def clean_comments()
+    @vm_file.delete_if{|index| index.match(/[\/]{2}/) }
   end
 
-  def command_type()
-    if @current_line.include?("push")
+  def clean(incoming_line)
+    @current_line = incoming_line.split(" ")
+  end
+
+  def command_type(incoming_line)
+    if incoming_line.include?("push")
       command_type = "C_PUSH"
-    elsif @current_line.include?("pop")
+    elsif incoming_line.include?("pop")
       command_type = "C_POP"
-    elsif @current_line.match(/\badd\b|\bsub\b|\bneg\b/)
+    elsif incoming_line.match(/\badd\b|\bsub\b|\bneg\b/)
       command_type = "C_ARITHMETIC"
-    elsif @current_line.match(/\beq\b|\blt\b|\bgt\b/)
+    elsif incoming_line.match(/\beq\b|\blt\b|\bgt\b/)
       command_type = "C_ARITHMETIC"
-    elsif @current_line.match(/\bor\b|\bnot\b|\band\b/)
+    elsif incoming_line.match(/\bor\b|\bnot\b|\band\b/)
       command_type = "C_ARITHMETIC"   
     end
 
   end
 
-  def arg1()
-    if command_type == "C_PUSH"
-      arg1 = @current_line.split("push")[1].split(/[0-9]/)[0]
-    elsif command_type == "C_POP"
-      arg1 = @current_line.split("pop")[1].split(/[0-9]/)[0]
-    elsif command_type == "C_ARITHMETIC" 
-      arg1 = @current_line
+  def arg1(incoming_line)
+    if command_type(incoming_line) == "C_PUSH"
+      arg1 = @current_line[1]
+    elsif command_type(incoming_line) == "C_POP"
+      arg1 = @current_line[1]
+    elsif command_type(incoming_line) == "C_ARITHMETIC" 
+      arg1 = @current_line[0]
     end
   end
 
-  def arg2()
-    if command_type == "C_PUSH"
-      arg2 = @current_line.gsub(/[a-z]/, "")
-    elsif command_type == "C_POP"
-      arg2 = @current_line.gsub(/[a-z]/, "")
+  def arg2(incoming_line)
+    if command_type(incoming_line) == "C_PUSH"
+      arg2 = @current_line[2]
+    elsif command_type(incoming_line) == "C_POP"
+      arg2 = @current_line[2]
     end
     arg2.to_i
   end
@@ -54,14 +55,16 @@ class Parser
 
 
   def parse()
-
+    clean_comments
     @vm_file.each do |line|
-      clean_line(line)
-      unless @current_line.empty?
-        if command_type == "C_PUSH" || command_type == "C_POP"
-          @code_writer.write_push_pop(command_type, arg1, arg2, line)
-        elsif command_type == "C_ARITHMETIC" 
-          @code_writer.write_arithmetic(arg1, line)
+      unless line.empty?
+        type = command_type(line)
+        if type == "C_PUSH" || type == "C_POP"
+          clean(line)
+          @code_writer.write_push_pop(type, arg1(line), arg2(line), line)
+        elsif command_type(line) == "C_ARITHMETIC"
+          clean(line)
+          @code_writer.write_arithmetic(arg1(line), line)
         end
       end
     end
