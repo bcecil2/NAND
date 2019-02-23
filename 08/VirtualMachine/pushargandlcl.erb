@@ -1,0 +1,15 @@
+<%= "@#{index}" %>
+D=A
+<%= "#{@mem_segment_table[segment]}" %>
+M=M+D
+A=M
+D=M 
+@SP
+A=M
+M=D
+<%= "@#{index}" %>
+D=A
+<%= "#{@mem_segment_table[segment]}" %>
+M=M-D
+@SP
+M=M+1
