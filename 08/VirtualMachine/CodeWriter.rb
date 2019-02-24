@@ -41,6 +41,8 @@ class CodeWriter
     @jump_table = {"lt" => "D;JLT",
                    "gt" => "D;JGT",
                    "eq" => "D;JEQ"}
+    @current_function = Array.new()
+    @call_count = 0
   end
 
   def write_arithmetic(command , line)
@@ -85,12 +87,17 @@ class CodeWriter
   end
 
   def write_function(function_name, num_locals, line)
-    puts function_name
     @asm_file << "//#{line}\n"
     @asm_file << "(#{function_name})\n" 
     (1..num_locals).each do |var|
       @asm_file << ERB.new(File.read("function.erb")).result(binding)
     end
+  end
+
+  def write_call(function_name, num_args, line)
+    @call_count += 1
+    @asm_file << "//#{line}\n"
+    @asm_file << ERB.new(File.read("callfunc.erb")).result(binding)
   end
 
   def write_return(line)

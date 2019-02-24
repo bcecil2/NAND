@@ -39,12 +39,14 @@ class Parser
       command_type = "C_FUNCTION"
     elsif incoming_line.include?("return")
         command_type = "C_RETURN"
+    elsif incoming_line.include?("call")
+      command_type = "C_CALL"
     end
 
   end
 
   def arg1(incoming_line)
-    if command_type(incoming_line) == "C_PUSH" || command_type(incoming_line) == "C_IF" || command_type(incoming_line) == "C_LABEL" || command_type(incoming_line) == "C_GOTO" || command_type(incoming_line) == "C_FUNCTION"
+    if command_type(incoming_line) == "C_PUSH" || command_type(incoming_line) == "C_IF" || command_type(incoming_line) == "C_LABEL" || command_type(incoming_line) == "C_GOTO" || command_type(incoming_line) == "C_FUNCTION" || command_type(incoming_line) == "C_CALL"
       arg1 = @current_line[1]
     elsif command_type(incoming_line) == "C_POP"
       arg1 = @current_line[1]
@@ -54,7 +56,7 @@ class Parser
   end
 
   def arg2(incoming_line)
-    if command_type(incoming_line) == "C_PUSH" || command_type(incoming_line) == "C_FUNCTION"
+    if command_type(incoming_line) == "C_PUSH" || command_type(incoming_line) == "C_FUNCTION" || command_type(incoming_line) == "C_CALL"
       arg2 = @current_line[2]
     elsif command_type(incoming_line) == "C_POP"
       arg2 = @current_line[2]
@@ -91,6 +93,9 @@ class Parser
         elsif type == "C_RETURN"
           clean(line)
           @code_writer.write_return(line)
+        elsif type == "C_CALL"
+          clean(line)
+          @code_writer.write_call(arg1(line), arg2(line), line)
         end
       end
     end
