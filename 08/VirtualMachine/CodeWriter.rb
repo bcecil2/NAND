@@ -4,9 +4,10 @@ class CodeWriter
 
   attr_writer :asm_file
   attr_reader :index, :mem_segment_table
+  attr_writer :static_prefix
   def initialize(file_to_write)
     @asm_file = File.open(file_to_write, "w")
-    @static_prefix =  File.basename(file_to_write).gsub(".asm", "")
+    @static_prefix =  File.basename(file_to_write).gsub(".vm", "")
     @label_count = 1
     @binary_operator_table = {"add" => "M=M+D\n",
                               "sub" => "M=M-D\n",
@@ -41,8 +42,12 @@ class CodeWriter
     @jump_table = {"lt" => "D;JLT",
                    "gt" => "D;JGT",
                    "eq" => "D;JEQ"}
-    @current_function = Array.new()
+    @current_function = Array.new(1, @static_prefix)
     @call_count = 0
+    @static_table = Hash.new()
+    @static_variables = Hash.new()
+    @static_base = 16
+    @static_count = 0
   end
 
   def write_arithmetic(command , line)
@@ -60,6 +65,15 @@ class CodeWriter
 
   def write_push_pop(command, segment, index, line)
     @asm_file << "//#{line}\n"
+    if segment == "static"
+      if !@static_table.has_key? ("#{@static_prefix}")
+          @static_base += @static_count
+          @static_table["#{@static_prefix}"] = @static_base
+      elsif !@static_variables.has_key? ("#{@static_prefix}.#{index}")
+          @static_variables["#{@static_prefix}.#{index}"] = @static_base
+          @static_count += 1
+      end
+    end
     if command == "C_PUSH"
       @asm_file << ERB.new(File.read(@push_file_table[segment])).result(binding)  
     elsif command == "C_POP"
@@ -73,6 +87,7 @@ class CodeWriter
   end
 
   def write_label(label, line)
+    @label_count += 1
     @asm_file << "//#{line}\n"
     @asm_file << ERB.new(File.read("label.erb")).result(binding)
   end
@@ -87,6 +102,7 @@ class CodeWriter
   end
 
   def write_function(function_name, num_locals, line)
+    @current_function << function_name
     @asm_file << "//#{line}\n"
     @asm_file << "(#{function_name})\n" 
     (1..num_locals).each do |var|
@@ -103,6 +119,10 @@ class CodeWriter
   def write_return(line)
     @asm_file << "//#{line}\n"
     @asm_file << ERB.new(File.read("return.erb")).result(binding)
+  end
+
+  def write_bootstrap()
+    @asm_file << ERB.new(File.read("bootstrap.erb")).result(binding)
   end
 end
 

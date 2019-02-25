@@ -4,14 +4,16 @@ require_relative "CodeWriter.rb"
 class Parser
   attr_reader :current_line
   
-  def initialize(in_file, out_file)
+  def initialize(out_file)
     @current_line = ""
-    @vm_file = in_file.readlines
-    @code_writer = CodeWriter.new(out_file) 
+    @code_writer = CodeWriter.new(out_file)
+    @in_file = nil
+    @code_writer.write_bootstrap() 
   end
 
-  def clean_comments()
-    @vm_file.delete_if{|index| index.match(/^[\/]{2}/) }
+  def clean_comments(file)
+    @in_file = file.readlines
+    @in_file.delete_if{|index| index.match(/^[\/]{2}/) }
   end
 
   def clean(incoming_line)
@@ -66,10 +68,10 @@ class Parser
 
 
 
-  def parse()
-    clean_comments
-    #puts @vm_file
-    @vm_file.each do |line|
+  def parse(file)
+    clean_comments(file)
+    @code_writer.static_prefix = File.basename(file).gsub(".vm", "")
+    @in_file.each do |line|
       unless line.empty?
         type = command_type(line)
         if type == "C_PUSH" || type == "C_POP"
