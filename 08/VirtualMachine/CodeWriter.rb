@@ -9,12 +9,20 @@ class CodeWriter
     @asm_file = File.open(file_to_write, "w")
     @static_prefix =  File.basename(file_to_write).gsub(".vm", "")
     @label_count = 1
+    @current_function = Array.new(1, @static_prefix)
+    @call_count = 0
+    @static_table = Hash.new()
+    @static_variables = Hash.new()
+    @static_base = 16
+    @static_count = 0
+
     @binary_operator_table = {"add" => "M=M+D\n",
                               "sub" => "M=M-D\n",
                               "and" => "M=M&D\n",
                               "or" => "M=M|D\n"}
                  
     @unary_operator_table = {"neg" => "M=-M\n","not" => "M=!M\n"}
+
     @mem_segment_table = {"constant" => "@SP\n",
                           "local" => "@LCL\n",
                           "this" => "@THIS\n",
@@ -23,6 +31,7 @@ class CodeWriter
                           "temp" => "@5\n",
                           "pointer" => "@3\n",
                           "static" => "@16\n"}
+
     @push_file_table = {"constant" => "pushconstant.erb",
                        "temp" => "pushpointerandtemp.erb",
                        "pointer" => "pushpointerandtemp.erb",
@@ -41,13 +50,7 @@ class CodeWriter
                        "argument" => "popargandlcl.erb"}
     @jump_table = {"lt" => "D;JLT",
                    "gt" => "D;JGT",
-                   "eq" => "D;JEQ"}
-    @current_function = Array.new(1, @static_prefix)
-    @call_count = 0
-    @static_table = Hash.new()
-    @static_variables = Hash.new()
-    @static_base = 16
-    @static_count = 0
+                   "eq" => "D;JEQ"} 
   end
 
   def write_arithmetic(command , line)
@@ -67,11 +70,9 @@ class CodeWriter
     @asm_file << "//#{line}\n"
     if segment == "static"
       if !@static_table.has_key? ("#{@static_prefix}")
-          @static_base += @static_count
-          @static_table["#{@static_prefix}"] = @static_base
+          add_entry_to_static_table
       elsif !@static_variables.has_key? ("#{@static_prefix}.#{index}")
-          @static_variables["#{@static_prefix}.#{index}"] = @static_base
-          @static_count += 1
+          change_static_base_pointer
       end
     end
     if command == "C_PUSH"
@@ -81,6 +82,15 @@ class CodeWriter
     end
   end
 
+  def add_entry_to_static_table()
+    @static_base += @static_count
+    @static_table["#{@static_prefix}"] = @static_base
+  end
+
+  def change_static_base_pointer()
+    @static_variables["#{@static_prefix}.#{index}"] = @static_base
+    @static_count += 1
+  end
   def write_if(label, line)
     @asm_file << "//#{line}\n"
     @asm_file << ERB.new(File.read("if-goto.erb")).result(binding)
@@ -97,9 +107,7 @@ class CodeWriter
     @asm_file << ERB.new(File.read("goto.erb")).result(binding)
   end
 
-  def add_end()
-    @asm_file << "(END)\n@END\n0;JMP\n"
-  end
+  
 
   def write_function(function_name, num_locals, line)
     @current_function << function_name
@@ -123,6 +131,10 @@ class CodeWriter
 
   def write_bootstrap()
     @asm_file << ERB.new(File.read("bootstrap.erb")).result(binding)
+  end
+  
+  def add_end()
+    @asm_file << "(END)\n@END\n0;JMP\n"
   end
 end
 
