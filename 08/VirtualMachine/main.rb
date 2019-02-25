@@ -17,14 +17,14 @@ if  valid_dir
 			vm_files << file
 		end
 	end
+	directories = dir_name.split("\\")
+	file_to_write = File.open("#{dir_name}\\#{directories[-1]}.asm", "w") 
+	vm_parser = Parser.new(file_to_write)
 	vm_files.each do |file|
 		vm_filename = file
 		incoming_filename = File.basename(vm_filename, ".*")
-		asm_file = "#{dir_name}\\#{incoming_filename}.asm"
 		incoming_file = File.open("#{dir_name}\\#{incoming_filename}.vm", "r") 
-		file_to_write = File.open("#{asm_file}", "w") 
-		vm_parser = Parser.new(incoming_file, file_to_write)
-		vm_parser.parse
+		vm_parser.parse(incoming_file)
 	end			
 elsif valid_file
 	vm_filename = ARGV[0]
