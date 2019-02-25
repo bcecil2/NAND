@@ -8,7 +8,44 @@ class Parser
     @current_line = ""
     @code_writer = CodeWriter.new(out_file)
     @in_file = nil
-    @code_writer.write_bootstrap() 
+    @code_writer.write_bootstrap()
+    @command_type_table ={"push" => "C_PUSH",
+                        "pop" => "C_POP",
+                        "add" => "C_ARITHMETIC",
+                        "sub" => "C_ARITHMETIC",
+                        "neg" => "C_ARITHMETIC",
+                        "eq" => "C_ARITHMETIC",
+                        "lt" => "C_ARITHMETIC",
+                        "gt" => "C_ARITHMETIC",
+                        "or" => "C_ARITHMETIC",
+                        "not" => "C_ARITHMETIC",
+                        "and" => "C_ARITHMETIC",
+                        "if-goto" => "C_IF",
+                        "label" => "C_LABEL",
+                        "goto" => "C_GOTO",
+                        "function" => "C_FUNCTION",
+                        "return" => "C_RETURN",
+                        "call" => "C_CALL"}
+
+    @function_call_table = {"C_PUSH" => "write_push_pop",
+                            "C_POP" => "write_push_pop",
+                            "C_ARITHMETIC" => "write_arithmetic",
+                            "C_LABEL" => "write_label",
+                            "C_IF" => "write_if",
+                            "C_GOTO" => "write_goto",
+                            "C_RETURN" => "write_return",
+                            "C_CALL" => "write_call",
+                            "C_FUNCTION" => "write_function"} 
+                            
+    @arg1_table = {"C_PUSH" => 1,
+                   "C_POP" => 1,
+                   "C_IF" => 1,
+                   "C_LABEL" => 1,
+                   "C_GOTO" => 1,
+                   "C_FUNCTION" => 1,
+                   "C_CALL" => 1,
+                   "C_ARITHMETIC" => 0,
+                   "C_RETURN" => 0}
   end
 
   def clean_comments(file)
@@ -21,48 +58,15 @@ class Parser
   end
 
   def command_type(incoming_line)
-    if incoming_line.include?("push")
-      command_type = "C_PUSH"
-    elsif incoming_line.include?("pop")
-      command_type = "C_POP"
-    elsif incoming_line.match(/\badd\b|\bsub\b|\bneg\b/)
-      command_type = "C_ARITHMETIC"
-    elsif incoming_line.match(/\beq\b|\blt\b|\bgt\b/)
-      command_type = "C_ARITHMETIC"
-    elsif incoming_line.match(/\bor\b|\bnot\b|\band\b/)
-      command_type = "C_ARITHMETIC" 
-    elsif incoming_line.include?("if-goto")
-      command_type = "C_IF"
-    elsif incoming_line.include?("label")
-      command_type = "C_LABEL"
-    elsif incoming_line.include?("goto")
-      command_type = "C_GOTO"
-    elsif incoming_line.include?("function")
-      command_type = "C_FUNCTION"
-    elsif incoming_line.include?("return")
-        command_type = "C_RETURN"
-    elsif incoming_line.include?("call")
-      command_type = "C_CALL"
-    end
-
+    @command_type_table[incoming_line]
   end
 
-  def arg1(incoming_line)
-    if command_type(incoming_line) == "C_PUSH" || command_type(incoming_line) == "C_IF" || command_type(incoming_line) == "C_LABEL" || command_type(incoming_line) == "C_GOTO" || command_type(incoming_line) == "C_FUNCTION" || command_type(incoming_line) == "C_CALL"
-      arg1 = @current_line[1]
-    elsif command_type(incoming_line) == "C_POP"
-      arg1 = @current_line[1]
-    elsif command_type(incoming_line) == "C_ARITHMETIC" || command_type(incoming_line) == "C_RETURN"
-      arg1 = @current_line[0]
-    end
+  def arg1(type)
+    arg1 = @current_line[@arg1_table[type]]
   end
 
-  def arg2(incoming_line)
-    if command_type(incoming_line) == "C_PUSH" || command_type(incoming_line) == "C_FUNCTION" || command_type(incoming_line) == "C_CALL"
-      arg2 = @current_line[2]
-    elsif command_type(incoming_line) == "C_POP"
-      arg2 = @current_line[2]
-    end
+  def arg2(type)
+    arg2 = @current_line[2]
     arg2.to_i
   end
 
@@ -72,32 +76,26 @@ class Parser
     clean_comments(file)
     @code_writer.static_prefix = File.basename(file).gsub(".vm", "")
     @in_file.each do |line|
-      unless line.empty?
-        type = command_type(line)
+      if !line.chomp.strip.empty?
+        clean(line)
+        type = command_type(@current_line[0])
+        #@code_writer.method(@function_call_table[type]).call()
         if type == "C_PUSH" || type == "C_POP"
-          clean(line)
-          @code_writer.write_push_pop(type, arg1(line), arg2(line), line)
+          @code_writer.write_push_pop(type, arg1(type), arg2(type), line)
         elsif type == "C_ARITHMETIC"
-          clean(line)
-          @code_writer.write_arithmetic(arg1(line), line)
+          @code_writer.write_arithmetic(arg1(type), line)
         elsif type == "C_LABEL"
-          clean(line)
-          @code_writer.write_label(arg1(line), line)
+          @code_writer.write_label(arg1(type), line)
         elsif type == "C_IF"
-          clean(line)
-          @code_writer.write_if(arg1(line), line)
+          @code_writer.write_if(arg1(type), line)
         elsif type == "C_GOTO"
-          clean(line)
-          @code_writer.write_goto(arg1(line), line)
+          @code_writer.write_goto(arg1(type), line)
         elsif type == "C_FUNCTION"
-          clean(line)
-          @code_writer.write_function(arg1(line), arg2(line), line)
+          @code_writer.write_function(arg1(type), arg2(type), line)
         elsif type == "C_RETURN"
-          clean(line)
           @code_writer.write_return(line)
         elsif type == "C_CALL"
-          clean(line)
-          @code_writer.write_call(arg1(line), arg2(line), line)
+          @code_writer.write_call(arg1(type), arg2(type), line)
         end
       end
     end
