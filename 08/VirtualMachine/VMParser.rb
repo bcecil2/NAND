@@ -4,11 +4,13 @@ require_relative "CodeWriter.rb"
 class Parser
   attr_reader :current_line
   
-  def initialize(out_file)
+  def initialize(out_file, bootstrap)
     @current_line = ""
     @code_writer = CodeWriter.new(out_file)
     @in_file = nil
-    @code_writer.write_bootstrap()
+    if bootstrap
+      @code_writer.write_bootstrap()
+    end
     @command_type_table ={"push" => "C_PUSH",
                         "pop" => "C_POP",
                         "add" => "C_ARITHMETIC",
