@@ -1,7 +1,7 @@
 require_relative "VMParser.rb"
 
 def valid_dir
-	ARGV.size == 1 && Dir.exist?(ARGV[0])  && Dir.each_child(ARGV[0]).any?{ |file|  File.extname(file) == ".vm" }
+	ARGV.size <= 2 && Dir.exist?(ARGV[0])  && Dir.each_child(ARGV[0]).any?{ |file|  File.extname(file) == ".vm" }
 end
 
 
@@ -11,6 +11,11 @@ end
 
 if  valid_dir 
 	dir_name = ARGV[0]
+	if ARGV.size == 2
+		if ARGV[1] == "-b"
+			bootstrap = true
+		end
+	end
 	vm_files = Array.new
 	Dir.each_child(dir_name) do |file|
 		if File.extname(file) == ".vm"
@@ -19,7 +24,7 @@ if  valid_dir
 	end
 	directories = dir_name.split("\\")
 	file_to_write = File.open("#{dir_name}\\#{directories[-1]}.asm", "w") 
-	vm_parser = Parser.new(file_to_write)
+	vm_parser = Parser.new(file_to_write, bootstrap)
 	vm_files.each do |file|
 		vm_filename = file
 		incoming_filename = File.basename(vm_filename, ".*")
@@ -37,4 +42,5 @@ elsif valid_file
 	vm_parser.parse
 else
 	puts "failed"
+	puts ARGV[0], ARGV[1]
 end
