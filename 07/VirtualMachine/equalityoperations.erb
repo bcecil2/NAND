@@ -1,0 +1,26 @@
+@SP
+M=M-1
+@SP
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M-D
+<%= "@TRUECASE#{@label_count}" %>
+<%= "#{jump_directive}" %>
+<%= "@NOTTRUECASE#{@label_count}" %>
+0;JMP
+<%= "(TRUECASE#{@label_count})" %>
+@SP
+A=M
+M=-1
+<%= "@CHANGESP#{@label_count}" %>
+0;JMP
+<%= "(NOTTRUECASE#{@label_count})" %>
+@SP
+A=M
+M=0
+<%= "(CHANGESP#{@label_count})" %>
+@SP
+<%= "M=M+1\n" %> 
