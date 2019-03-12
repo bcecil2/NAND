@@ -4,6 +4,8 @@ require_relative "CodeWriter.rb"
 class Parser
   attr_reader :current_line
   
+  # initializes code writer and hash tables
+  # if the bootstrap flag is set the code writer produces bootstrap
   def initialize(out_file, bootstrap)
     @current_line = ""
     @code_writer = CodeWriter.new(out_file)
@@ -50,19 +52,24 @@ class Parser
                    "C_RETURN" => 0}
   end
 
+  # creates an array of all the lines in the file using readlines
+  # then deletes any lines that have inline comments
   def clean_comments(file)
     @in_file = file.readlines
     @in_file.delete_if{|index| index.match(/^[\/]{2}/) }
   end
 
+  # splits incoming line on white space
   def clean(incoming_line)
     @current_line = incoming_line.split(" ")
   end
 
+  # looks up the command type in the hash table
   def command_type(incoming_line)
     @command_type_table[incoming_line]
   end
 
+  # 
   def arg1(type)
     arg1 = @current_line[@arg1_table[type]]
   end
@@ -81,7 +88,6 @@ class Parser
       if !line.chomp.strip.empty?
         clean(line)
         type = command_type(@current_line[0])
-        #@code_writer.method(@function_call_table[type]).call()
         if type == "C_PUSH" || type == "C_POP"
           @code_writer.write_push_pop(type, arg1(type), arg2(type), line)
         elsif type == "C_ARITHMETIC"
